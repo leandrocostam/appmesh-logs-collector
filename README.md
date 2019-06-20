@@ -10,7 +10,7 @@ The project was created in order to retrieve logs from your AWS App Mesh resourc
   2. Make sure the machine has the [latest version of AWS CLI installed](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html).
   3. (Kubernetes only) Make sure you are using the correct [context for your Kubernetes cluster](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html) because the script makes use of kubectl. 
   
-##### App Mesh Resources
+#### App Mesh Resources
 
   Collect information of your App Mesh (mesh, virtual services, virtual nodes, etc) by running the following command from :
   ```bash
@@ -18,14 +18,14 @@ The project was created in order to retrieve logs from your AWS App Mesh resourc
   ```
   *Run from: Any OS Linux with AWS-CLI configured with permission (at least) App Mesh read access*
 
-##### Related Resources in Amazon EKS / Kubernetes
+#### Related Resources in Amazon EKS / Kubernetes
 
   Collect logs of Kubernetes resources per namespace (pods,deployments,services) integrated with AWS App Mesh by running following command:
   ```bash
   appmesh-logs-collector.sh --resource=k8s --namespace=<namespace>
   ```
 
-##### Related Resources in Amazon EC2
+#### Related Resources in Amazon EC2
   
   Collect all information of your mesh resources running in Amazon EC2 by running the following command:
   ```bash
