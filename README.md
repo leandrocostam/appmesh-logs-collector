@@ -9,7 +9,7 @@ The project was created in order to retrieve logs from your AWS App Mesh resourc
   ```bash
   curl -O https://raw.githubusercontent.com/leandrocostam/appmesh-logs-collector/master/appmesh-logs-collector.sh
   ```
-  3. (Kubernetes only) Make sure you are using the correct [context for your Kubernetes cluster](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html) because the script makes use of kubectl. 
+  > (Kubernetes only) Make sure you are using the correct [context for your Kubernetes cluster](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html) because the script makes use of kubectl. 
   
 #### App Mesh Resources
 
@@ -32,10 +32,10 @@ The project was created in order to retrieve logs from your AWS App Mesh resourc
   $ sudo bash appmesh-logs-collector.sh --resource=ec2
   ```
 
-## Script Options (not ready)
+### Script Options (not ready)
 
   ```bash
   $ sudo bash appmesh-logs-collector.sh --help
   ```
 
-## Contribuite 
+### Contribuite 
