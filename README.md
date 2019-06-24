@@ -43,6 +43,10 @@ The project was created in order to retrieve logs from your AWS App Mesh resourc
   --resource "appmesh" --mesh-name <name-mesh> --region <aws-region>
   --resource "k8s" --namespace <namespace>
   --resource "ec2"
+
+  Default values:
+  region: us-east-1
+  namespace: default
   ```
 
 ### Contribuite

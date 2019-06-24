@@ -34,8 +34,8 @@ function help {
     echo "--resource \"ec2\""
     echo ""
     echo "Default values:"
-    echo "--region us-east-1"
-    echo "--namespace default"
+    echo "--region: us-east-1"
+    echo "--namespace: default"
 }
 
 POSITIONAL=()
