@@ -13,15 +13,13 @@ REQUIRED_UTILS=(
     tar
     date
     mkdir
-    grep
-    awk
+    jq
 )
 
 APPMESH_COMMON_RESOURCES=(
     virtual_services
     virtual_nodes
     virtual_routers
-    routes
 )
 
 function help {
@@ -116,7 +114,7 @@ function collect_appmesh_mesh() {
         exit 1
     else 
         if [ -n "${EXEC}" ]; then
-            echo ${EXEC} > "${COLLECT_DIR}/${MESH_NAME}/${MESH_NAME}.json"
+            echo ${EXEC} | jq . > "${COLLECT_DIR}/${MESH_NAME}/${MESH_NAME}.json"
         fi
     fi
 
@@ -134,7 +132,7 @@ function collect_appmesh_virtual_services() {
         for vs_item in ${VS}; do
             VSOUTPUT=$(aws appmesh describe-virtual-service --mesh-name ${MESH_NAME} --virtual-service-name ${vs_item} --region=${AWS_REGION})
             if [ -n "${VSOUTPUT}" ]; then
-                echo ${VSOUTPUT} > "${COLLECT_DIR}/${MESH_NAME}/virtual_services/${vs_item}.json"
+                echo ${VSOUTPUT} | jq . > "${COLLECT_DIR}/${MESH_NAME}/virtual_services/${vs_item}.json"
             fi
         done
     fi
@@ -152,7 +150,7 @@ function collect_appmesh_virtual_nodes() {
         for vn_item in ${VN}; do
             VNOUTPUT=$(aws appmesh describe-virtual-node --mesh-name ${MESH_NAME} --virtual-node-name ${vn_item} --region=${AWS_REGION})
             if [ -n "${VNOUTPUT}" ]; then
-                echo ${VNOUTPUT} > "${COLLECT_DIR}/${MESH_NAME}/virtual_nodes/${vn_item}.json"
+                echo ${VNOUTPUT} | jq . > "${COLLECT_DIR}/${MESH_NAME}/virtual_nodes/${vn_item}.json"
             fi
         done
     fi
@@ -170,7 +168,7 @@ function collect_appmesh_virtual_routers() {
         for vr_item in ${VR}; do
             VROUTPUT=$(aws appmesh describe-virtual-router --mesh-name ${MESH_NAME} --virtual-router-name ${vr_item} --region=${AWS_REGION})
             if [ -n "${VROUTPUT}" ]; then
-                echo ${VROUTPUT} > "${COLLECT_DIR}/${MESH_NAME}/virtual_routers/${vr_item}.json"
+                echo ${VROUTPUT} | jq . > "${COLLECT_DIR}/${MESH_NAME}/virtual_routers/${vr_item}.json"
                 ## Call function appmesh_vr_list_routes in order to retrieve the list of associated routes with the virtual router
                 appmesh_vr_list_routes
             fi
@@ -189,18 +187,44 @@ function appmesh_vr_list_routes() {
         for lr_item in ${LR}; do
             ROUTPUT=$(aws appmesh describe-route --mesh-name ${MESH_NAME} --route-name ${lr_item} --virtual-router-name ${vr_item} --region=${AWS_REGION})
             if [ -n "${ROUTPUT}" ]; then
-                echo ${ROUTPUT} >> "${COLLECT_DIR}/${MESH_NAME}/virtual_routers/${vr_item}_routes.json"
+                echo ${ROUTPUT} | jq . >> "${COLLECT_DIR}/${MESH_NAME}/virtual_routers/${vr_item}_routes.json"
             fi
         done
     fi
 }
 
+function check_k8s_cluster() {
+    echo -e "Checking Cluster configuration..."
+    KCTL_CONTEXT=$(kubectl config current-context)
+    echo -e ${KCTL_CONTEXT} > "${COLLECT_DIR}"/k8s_"${K8S_NAMESPACE}"/kubectl_context.txt
+    echo -e "Current kubectl context: \"${KCTL_CONTEXT}\""
+    echo -e "Kubernetes Namespace: ${K8S_NAMESPACE}"
+    KCTL_STATUS=$(kubectl get componentstatuses)
+    if ! [ $? -eq 0 ]; then
+        echo -e "Error: kubectl test connection failed!"
+        cleanup
+        exit 1
+    fi
+}
+
 function collect_k8s() {
-    echo "Collecting related resources in Amazon EKS / Kubernetes..."
+    echo -e "Collecting related resources in Amazon EKS / Kubernetes..."
+    ## List all pods with container name = envoy
+    LIST_PODS=$(kubectl get pods -n ${K8S_NAMESPACE} --output json)
+    PODS_WITH_ENVOY=$(echo ${LIST_PODS} | jq '.items[] | select(.spec.containers[].name=="envoy")')
+    if [ -n "${PODS_WITH_ENVOY}" ]; then
+        echo ${PODS_WITH_ENVOY} | jq . > "${COLLECT_DIR}"/k8s_"${K8S_NAMESPACE}"/pods_with_envoy.json
+        ## Get pods name to retrieve the log from envoy containers
+        PODS_NAME=$(echo ${PODS_WITH_ENVOY} | jq -s | jq -r '.[].metadata.name')
+        for pod_name in ${PODS_NAME}; do
+            echo -e "Collecting logs from envoy container of the pod \"${pod_name}\"..."
+            kubectl logs $pod_name -c envoy -n ${K8S_NAMESPACE} > "${COLLECT_DIR}/k8s_"${K8S_NAMESPACE}"/logs/${pod_name}_envoy.log" 2>&1
+        done
+    fi
 }
 
 function collect_ec2() {
-    echo "Collecting related resources in Amazon EC2 / Kubernetes..."
+    echo -e "Collecting related resources in Amazon EC2"
 }
 
 function check_required_utils() {
@@ -233,6 +257,12 @@ function create_appmesh_directories() {
   done
 }
 
+function create_k8s_directories() {
+  mkdir -p "${PROGRAM_DIR}" 2>&1
+  
+  mkdir -p "${COLLECT_DIR}"/k8s_"${K8S_NAMESPACE}"/logs 2>&1
+}
+
 function create_tar() {
   echo -e "Generating compressed file..."
   NOW=$( date '+%Y-%m-%d_%H%M-%Z' )
@@ -242,12 +272,12 @@ function create_tar() {
 
 function cleanup() {
   echo -e "Cleaning up temporary files..."
-  rm --recursive --force "${COLLECT_DIR}" >/dev/null 2>&1
+  rm -rf "${COLLECT_DIR}" >/dev/null 2>&1
 }
 
 function complete_collect() {
       create_tar
-      ## cleanup
+      cleanup
       echo -e "\nCompression completed! The file with the bundle logs is located in ${PROGRAM_DIR}/${FILE_NAME} \n"
 }
 
@@ -278,6 +308,10 @@ function init() {
                     if [[ "${RESOURCE}" = "k8s" ]] && [[ -n "${K8S_NAMESPACE}" ]]; then
                         echo -e "Kubernetes resource selected."
                         check_kubectl
+                        create_k8s_directories
+                        check_k8s_cluster
+                        collect_k8s
+                        complete_collect
                     else
                         echo -e "Error: Invalid options for --resource k8s. Check --help for help"
                         exit 1

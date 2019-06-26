@@ -3,7 +3,7 @@ The project was created in order to retrieve logs from your AWS App Mesh resourc
 
 ### Setup
   
-  1. Make sure the machine has the [latest version of AWS CLI installed](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html) and [configured with credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html) that contains [IAM App Mesh permissions](https://docs.aws.amazon.com/app-mesh/latest/userguide/IAM_policies.html).
+  1. Make sure the machine has the [latest version of AWS CLI installed](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html) and [configured with credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html) that contain [IAM App Mesh permissions](https://docs.aws.amazon.com/app-mesh/latest/userguide/IAM_policies.html).
   
   2. Download the App Mesh Logs Collector script by running the following command:
   ```bash
@@ -18,7 +18,7 @@ The project was created in order to retrieve logs from your AWS App Mesh resourc
   sudo bash appmesh-logs-collector.sh --resource appmesh --mesh-name <mesh-name> --region <aws-region>
   ```
 
-### Collect Related Resources in Amazon EKS / Kubernetes (not ready)
+### Collect Related Resources in Amazon EKS / Kubernetes
 
   Collect logs of Kubernetes resources per namespace (pods,deployments,services) integrated with AWS App Mesh by running the following command:
   ```bash
