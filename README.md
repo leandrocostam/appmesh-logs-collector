@@ -20,14 +20,14 @@ The project was created in order to retrieve logs from your AWS App Mesh resourc
 
 ### Collect Related Resources in Amazon EKS / Kubernetes
 
-  Collect logs of Kubernetes resources per namespace (pods,deployments,services) integrated with AWS App Mesh by running the following command:
+  Collect logs from envoy containers of Kubernetes cluster per namespace by running the following command:
   ```bash
   sudo bash appmesh-logs-collector.sh --resource k8s --namespace <namespace>
   ```
 
 ### Collect Related Resources in Amazon EC2 (not ready)
   
-  Collect all information of your mesh resources running in Amazon EC2 by running the following command from the EC2 instance:
+  Collect all information of your App Mesh resources running in your Amazon EC2 by running the following command from the EC2 instance:
   ```bash
   $ sudo bash appmesh-logs-collector.sh --resource ec2
   ```
