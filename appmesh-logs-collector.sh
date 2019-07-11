@@ -81,7 +81,7 @@ MESH_NAME="${MESH_NAME:-}"
 AWS_REGION="${AWS_REGION:-us-east-1}"
 K8S_NAMESPACE="${K8S_NAMESPACE:-default}"
 
-## Check--resource
+## Check--resource parameter
 if [ -z "${RESOURCE}" ]; then
     echo -e "Error: The parameter --resource is not defined. Check --help for help."
     exit  1
@@ -217,9 +217,14 @@ function collect_k8s() {
         ## Get pods name to retrieve the log from envoy containers
         PODS_NAME=$(echo ${PODS_WITH_ENVOY} | jq -s | jq -r '.[].metadata.name')
         for pod_name in ${PODS_NAME}; do
-            echo -e "Collecting logs from envoy container of the pod \"${pod_name}\"..."
+            echo -e "Collecting logs and settings from envoy container of the pod \"${pod_name}\"..."
             kubectl logs $pod_name -c envoy -n ${K8S_NAMESPACE} > "${COLLECT_DIR}/k8s_"${K8S_NAMESPACE}"/logs/${pod_name}_envoy.log" 2>&1
+            kubectl exec $pod_name -c envoy -n ${K8S_NAMESPACE} -- /usr/bin/curl -s http://localhost:9901/config_dump > "${COLLECT_DIR}/k8s_"${K8S_NAMESPACE}"/logs/${pod_name}_envoy_dump.json" 2>&1
         done
+    else 
+        echo -e "Warning: Envoy container not found in ${K8S_NAMESPACE} namespace."
+        cleanup
+        exit 1
     fi
 }
 
@@ -304,7 +309,7 @@ function init() {
                     fi
                     ;;
                 k8s)
-                     ## Check if the resource type is k8s
+                    ## Check if the resource type is k8s
                     if [[ "${RESOURCE}" = "k8s" ]] && [[ -n "${K8S_NAMESPACE}" ]]; then
                         echo -e "Kubernetes resource selected."
                         check_kubectl
